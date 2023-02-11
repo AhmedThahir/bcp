@@ -24,15 +24,6 @@ function update_text() {
 	customization_output.textContent = text;
 }
 
-function update_rotation() {
-	angle = (
-		document
-			.querySelector("#rotation_slider")
-			.value
-	);
-	document.querySelector("#preview").style.transform = `rotate(${angle}deg)`;
-}
-
 function buy() {
 	let text = customization_input.value;
 	sessionStorage.setItem("text", text);
@@ -42,4 +33,57 @@ function buy() {
 
 	new_page_link = `https://docs.google.com/forms/d/e/1FAIpQLSdlKV-BTigb_wjBhug6vJKieOikpwyijXOf6YS2CmHdvRtz7g/viewform?usp=pp_url&entry.691033026=${text}`
 	window.location.replace(new_page_link);
+}
+
+
+// -- ROTATING ELEMENT STUFF --
+const rotatingElement = document.getElementById("preview");
+var rotatingElementMouseDown = false;
+rotatingElement.dataset.prevPercentage = 0;
+
+rotatingElement.onmousedown = e => {
+    // Set current mouse postion
+    rotatingElement.dataset.mouseDownAt = e.clientX;
+    rotatingElementMouseDown = true;
+}
+
+window.onmouseup = e => {
+    // Reset mouse position
+    // Set current percentage along scale
+    if (rotatingElementMouseDown) {
+        rotatingElement.dataset.mouseDownAt = 0;
+        rotatingElement.dataset.prevPercentage = rotatingElement.dataset.nextPercentage;
+        rotatingElementMouseDown = false;
+    }
+}
+
+window.onmousemove = e => {
+    if (rotatingElementMouseDown) animateRotatingElement(e, rotatingElement);
+}
+
+function animateRotatingElement(e, rotatingElement) {
+    // If no change, return
+    if (rotatingElement.dataset.mouseDownAt === 0) return;
+
+    // Set slider size
+    const maxDelta = window.innerWidth / 5;
+
+    // As mouse moves, get change in position relative to starting position
+    const mouseDelta = parseFloat(rotatingElement.dataset.mouseDownAt) - e.clientX;
+
+    // Calculate percentage over total
+    const percentage = mouseDelta * 100 / maxDelta;
+    const nextPercentage = parseFloat(rotatingElement.dataset.prevPercentage) + percentage;
+
+    // Save percentage for next mouse scroll after release
+    // to prevent reset of element on new mouse click
+    rotatingElement.dataset.nextPercentage = nextPercentage;
+
+    // Animate translation of element
+    rotatingElement.animate({
+        transform: `rotate(${nextPercentage}deg)`
+    }, {
+        duration: 500,
+        fill: "forwards"
+    })
 }
