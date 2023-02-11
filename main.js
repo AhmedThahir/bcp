@@ -42,28 +42,41 @@ const rotatingElementBox = rotatingElement.getBoundingClientRect();
 const centers = window.getComputedStyle(rotatingElement).transformOrigin.split(" ");
 const centerX = rotatingElementBox.left + parseInt(centers[0]) - window.scrollX;
 const centerY = rotatingElementBox.top + parseInt(centers[1]) - window.scrollY;
-var rotatingElementMouseDown = false;
-// rotatingElement.dataset.rotationNumber = 0;
+let rotatingElementMouseDown = false;
 rotatingElement.dataset.prevDegrees = 0;
 
-function startMovement(e, rotatingElement) {
+function getCoordinates(e) {
+	let x, y, coordinates;
+
+	if (e.targetTouches && e.targetTouches[0]) {
+		e.preventDefault();
+		pointerEvent = e.targetTouches[0];
+		x = pointerEvent.pageX;
+		y = pointerEvent.pageY;
+	} else {
+		x = e.clientX;
+		y = e.clientY;
+	}
+
+	coordinates = [x, y];
+
+	return coordinates;
+}
+
+function startRotation(e) {
+	const coordinates = getCoordinates(e);
+	const x = coordinates[0], y = coordinates[1];
+
 	// Set current mouse postion
 	rotatingElement.dataset.mouseStartRadian = Math.atan2(
-		e.clientX - centerX,
-		e.clientY - centerY
+		x - centerX,
+		y - centerY
 	);
-	// rotatingElement.dataset.mousePrevRadian =  parseFloat(rotatingElement.dataset.mouseStartRadian);
+
 	rotatingElementMouseDown = true;
 }
 
-rotatingElement.onmouseenter = e => {
-	startMovement(e, rotatingElement)
-};
-rotatingElement.ontouchstart = e => {
-	startMovement(e, rotatingElement);
-}
-
-function endMovement(e, rotatingElement) {
+function endRotation(e) {
 	// Reset mouse position
 	// Set current percentage along scale
 	if (rotatingElementMouseDown) {
@@ -72,58 +85,33 @@ function endMovement(e, rotatingElement) {
 	}
 }
 
-window.onmouseleave = e => {
-	endMovement(e, rotatingElement)
-}
-window.ontouchend = e => {
-	endMovement(e, rotatingElement)
-}
-
-window.onmousemove = e => {
-	animateRotatingElement(e, rotatingElement);
-}
-
-window.ontouchmove = e => {
-	animateRotatingElement(e, rotatingElement);
-}
-
-function animateRotatingElement(e, rotatingElement) {
+function performRotation(e) {
 	if (!rotatingElementMouseDown)
 		return
 	// If no change, return
 	if (rotatingElement.dataset.mouseDownAtX === 0 || rotatingElement.dataset.mouseDownAtY === 0) return;
 
-	// Set slider size
-	// const maxDelta = window.innerWidth / 5;
-
-
 	// As mouse moves, get change in position relative to starting position
-	// const mouseDelta = e.clientX - parseFloat(rotatingElement.dataset.mouseDownAt);
+	const coordinates = getCoordinates(e);
+	const x = coordinates[0], y = coordinates[1];
+
 	const mouseCurrentRadian = Math.atan2(
-		e.clientX - centerX,
-		e.clientY - centerY
+		x - centerX,
+		y - centerY
 	);
 
-	// if(
-	//     Math.abs(parseFloat(rotatingElement.dataset.mousePrevRadian)) > 3.1 &&
-	//     Math.abs(mouseCurrentRadian) > 3.1 &&
-	//     Math.abs(parseFloat(rotatingElement.dataset.mousePrevRadian) - mouseCurrentRadian) < 0.2
-	// ) rotatingElement.dataset.rotationNumber++;
-
-	// const mouseDeltaRadian = (
-	//     parseInt(rotatingElement.dataset.rotationNumber) * Math.PI + 
-	//     (rotatingElement.dataset.mouseStartRadian - mouseCurrentRadian)
-	// );
 	const mouseDeltaRadian = rotatingElement.dataset.mouseStartRadian - mouseCurrentRadian;
 	const mouseDeltaDegrees = (mouseDeltaRadian * (180 / Math.PI));
 	rotatingElement.dataset.nextDegrees = parseFloat(rotatingElement.dataset.prevDegrees) + mouseDeltaDegrees;
 
 	rotatingElement.style.transform = `rotate(${parseInt(rotatingElement.dataset.nextDegrees)}deg)`;
-	// Animate translation of element
-	// rotatingElement.animate({
-	//     transform: `rotate(${parseFloat(rotatingElement.dataset.nextDegrees)}deg)`
-	// }, {
-	//     duration: 500,
-	//     fill: "forwards"
-	// })
 }
+
+rotatingElement.addEventListener("mouseover", startRotation);
+rotatingElement.addEventListener("touchstart", startRotation);
+
+rotatingElement.addEventListener("mouseleave", endRotation);
+rotatingElement.addEventListener("touchend", endRotation);
+
+rotatingElement.addEventListener("mousemove", performRotation);
+rotatingElement.addEventListener("touchmove", performRotation);
