@@ -99,11 +99,25 @@ body {
 	font-size: 0.8em;
 	width: 25ex;
 	transform: translateX(-50%) translateY(0%) rotate(-90deg);
+
+    /* UNSELECTABLE */
+    user-select: none;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
 }
 
 #bottle {
 	max-width: 100%;
 	max-height: 100%;
+
+    /* UNSELECTABLE */
+    user-select: none;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
 }
 
 #buy_button {
