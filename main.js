@@ -5,85 +5,125 @@ const default_text = "The Rizzler";
 init();
 
 function init() {
-    let text = sessionStorage.getItem("text");
-    if (text == null || text.length == 0)
-        text = default_text;
-    else
-        customization_input.value = text;
+	let text = sessionStorage.getItem("text");
+	if (text == null || text.length == 0)
+		text = default_text;
+	else
+		customization_input.value = text;
 
-    customization_output.textContent = text;
+	customization_output.textContent = text;
 }
 
 function update_text() {
-    const text = customization_input.value;
+	const text = customization_input.value;
 
-    if (text.length == 0)
-        text = default_text
+	if (text.length == 0)
+		text = default_text
 
-    sessionStorage.setItem("text", text);
-    customization_output.textContent = text;
+	sessionStorage.setItem("text", text);
+	customization_output.textContent = text;
 }
 
 function buy() {
-    let text = customization_input.value;
-    sessionStorage.setItem("text", text);
+	let text = customization_input.value;
+	sessionStorage.setItem("text", text);
 
-    if (text.length == 0)
-        text = default_text;
+	if (text.length == 0)
+		text = default_text;
 
-    new_page_link = `https://docs.google.com/forms/d/e/1FAIpQLSdlKV-BTigb_wjBhug6vJKieOikpwyijXOf6YS2CmHdvRtz7g/viewform?usp=pp_url&entry.691033026=${text}`
-    window.location.replace(new_page_link);
+	new_page_link = `https://docs.google.com/forms/d/e/1FAIpQLSdlKV-BTigb_wjBhug6vJKieOikpwyijXOf6YS2CmHdvRtz7g/viewform?usp=pp_url&entry.691033026=${text}`
+	window.location.replace(new_page_link);
 }
 
 
 // -- ROTATING ELEMENT STUFF --
 const rotatingElement = document.getElementById("preview");
+const rotatingElementBox = rotatingElement.getBoundingClientRect();
+const centers = window.getComputedStyle(rotatingElement).transformOrigin.split(" ");
+const centerX = rotatingElementBox.left + parseInt(centers[0]) - window.scrollX;
+const centerY = rotatingElementBox.top + parseInt(centers[1]) - window.scrollY;
 var rotatingElementMouseDown = false;
-rotatingElement.dataset.prevPercentage = 0;
+// rotatingElement.dataset.rotationNumber = 0;
+rotatingElement.dataset.prevDegrees = 0;
 
-rotatingElement.onmousedown = e => {
-    // Set current mouse postion
-    rotatingElement.dataset.mouseDownAt = e.clientX;
-    rotatingElementMouseDown = true;
+function startMovement(e, rotatingElement) {
+	// Set current mouse postion
+	rotatingElement.dataset.mouseStartRadian = Math.atan2(
+		e.clientX - centerX,
+		e.clientY - centerY
+	);
+	// rotatingElement.dataset.mousePrevRadian =  parseFloat(rotatingElement.dataset.mouseStartRadian);
+	rotatingElementMouseDown = true;
 }
 
-window.onmouseup = e => {
-    // Reset mouse position
-    // Set current percentage along scale
-    if (rotatingElementMouseDown) {
-        rotatingElement.dataset.mouseDownAt = 0;
-        rotatingElement.dataset.prevPercentage = rotatingElement.dataset.nextPercentage;
-        rotatingElementMouseDown = false;
-    }
+rotatingElement.onmouseenter = e => {
+	startMovement(e, rotatingElement)
+};
+rotatingElement.ontouchstart = e => {
+	startMovement(e, rotatingElement);
+}
+
+function endMovement(e, rotatingElement) {
+	// Reset mouse position
+	// Set current percentage along scale
+	if (rotatingElementMouseDown) {
+		rotatingElement.dataset.prevDegrees = rotatingElement.dataset.nextDegrees;
+		rotatingElementMouseDown = false;
+	}
+}
+
+window.onmouseleave = e => {
+	endMovement(e, rotatingElement)
+}
+window.ontouchend = e => {
+	endMovement(e, rotatingElement)
 }
 
 window.onmousemove = e => {
-    if (rotatingElementMouseDown) animateRotatingElement(e, rotatingElement);
+	animateRotatingElement(e, rotatingElement);
+}
+
+window.ontouchmove = e => {
+	animateRotatingElement(e, rotatingElement);
 }
 
 function animateRotatingElement(e, rotatingElement) {
-    // If no change, return
-    if (rotatingElement.dataset.mouseDownAt === 0) return;
+	if (!rotatingElementMouseDown)
+		return
+	// If no change, return
+	if (rotatingElement.dataset.mouseDownAtX === 0 || rotatingElement.dataset.mouseDownAtY === 0) return;
 
-    // Set slider size
-    const maxDelta = window.innerWidth / 5;
+	// Set slider size
+	// const maxDelta = window.innerWidth / 5;
 
-    // As mouse moves, get change in position relative to starting position
-    const mouseDelta = parseFloat(rotatingElement.dataset.mouseDownAt) - e.clientX;
 
-    // Calculate percentage over total
-    const percentage = mouseDelta * 100 / maxDelta;
-    const nextPercentage = parseFloat(rotatingElement.dataset.prevPercentage) + percentage;
+	// As mouse moves, get change in position relative to starting position
+	// const mouseDelta = e.clientX - parseFloat(rotatingElement.dataset.mouseDownAt);
+	const mouseCurrentRadian = Math.atan2(
+		e.clientX - centerX,
+		e.clientY - centerY
+	);
 
-    // Save percentage for next mouse scroll after release
-    // to prevent reset of element on new mouse click
-    rotatingElement.dataset.nextPercentage = nextPercentage;
+	// if(
+	//     Math.abs(parseFloat(rotatingElement.dataset.mousePrevRadian)) > 3.1 &&
+	//     Math.abs(mouseCurrentRadian) > 3.1 &&
+	//     Math.abs(parseFloat(rotatingElement.dataset.mousePrevRadian) - mouseCurrentRadian) < 0.2
+	// ) rotatingElement.dataset.rotationNumber++;
 
-    // Animate translation of element
-    rotatingElement.animate({
-        transform: `rotate(${nextPercentage}deg)`
-    }, {
-        duration: 500,
-        fill: "forwards"
-    })
+	// const mouseDeltaRadian = (
+	//     parseInt(rotatingElement.dataset.rotationNumber) * Math.PI + 
+	//     (rotatingElement.dataset.mouseStartRadian - mouseCurrentRadian)
+	// );
+	const mouseDeltaRadian = rotatingElement.dataset.mouseStartRadian - mouseCurrentRadian;
+	const mouseDeltaDegrees = (mouseDeltaRadian * (180 / Math.PI));
+	rotatingElement.dataset.nextDegrees = parseFloat(rotatingElement.dataset.prevDegrees) + mouseDeltaDegrees;
+
+	rotatingElement.style.transform = `rotate(${parseInt(rotatingElement.dataset.nextDegrees)}deg)`;
+	// Animate translation of element
+	// rotatingElement.animate({
+	//     transform: `rotate(${parseFloat(rotatingElement.dataset.nextDegrees)}deg)`
+	// }, {
+	//     duration: 500,
+	//     fill: "forwards"
+	// })
 }
